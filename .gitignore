@@ -1,0 +1,11 @@
+*~
+*.creator.user*
+*.o
+*.s
+*.lst
+*.map
+*.hex
+*.elf
+*.BAK
+docs/
+
