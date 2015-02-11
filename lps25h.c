@@ -2,35 +2,35 @@
 
 char lps25h_init( LPS25HUnit *unit, uint8_t address, LPS25HDataRate rate, LPS25HPresAvg pres_avg, LPS25HTempAvg temp_avg )
 {
-    /* ‰Šú‰» */
+    /* åˆæœŸåŒ– */
     uint8_t data;
     unit->address = address;
 
-    /* ƒfƒoƒCƒXIDŠm”F */
+    /* ãƒ‡ãƒã‚¤ã‚¹IDç¢ºèª */
     if ( !i2c_read_register( unit->address, 0x0F, &data, 1, I2CPolling ) ) {
         return 0;
     }
 
-    /* ƒfƒoƒCƒXID‚ªŠÔˆá‚Á‚Ä‚¢‚ê‚Î¸”s */
+    /* ãƒ‡ãƒã‚¤ã‚¹IDãŒé–“é•ã£ã¦ã„ã‚Œã°å¤±æ•— */
     if ( data != 0xBD ) {
         return 0;
     }
 
-    /* ƒ}ƒjƒ…ƒAƒ‹‚É]‚¢ˆê“xƒpƒ[ƒIƒt */
+    /* ãƒãƒ‹ãƒ¥ã‚¢ãƒ«ã«å¾“ã„ä¸€åº¦ãƒ‘ãƒ¯ãƒ¼ã‚ªãƒ• */
     data = 0x00;
 
     if ( !i2c_write_register( unit->address, 0x20, &data, 1, I2CPolling ) ) {
         return 0;
     }
 
-    /* “à•”‚Å•½‹Ï‰»‚³‚¹‚é ( ‚±‚ê‚ğİ’è‚µ‚È‚¢‚Æ³‚µ‚­“®ì‚µ‚È‚¢ ) */
+    /* å†…éƒ¨ã§å¹³å‡åŒ–ã•ã›ã‚‹ ( ã“ã‚Œã‚’è¨­å®šã—ãªã„ã¨æ­£ã—ãå‹•ä½œã—ãªã„ ) */
     data = pres_avg | temp_avg;
 
     if ( !i2c_write_register( unit->address, 0x10, &data, 1, I2CPolling ) ) {
         return 0;
     }
 
-    /* ƒf[ƒ^ƒŒ[ƒgİ’èC“Ç‚İo‚µ’†‚Ìƒf[ƒ^ƒƒbƒN */
+    /* ãƒ‡ãƒ¼ã‚¿ãƒ¬ãƒ¼ãƒˆè¨­å®šï¼Œèª­ã¿å‡ºã—ä¸­ã®ãƒ‡ãƒ¼ã‚¿ãƒ­ãƒƒã‚¯ */
     data = 0x04 | rate;
 
     unit->ctrl_1 = data;
@@ -44,7 +44,7 @@ char lps25h_init( LPS25HUnit *unit, uint8_t address, LPS25HDataRate rate, LPS25H
 
 char lps25h_start( LPS25HUnit *unit )
 {
-    /* ƒpƒ[ƒ_ƒEƒ“‰ğœ */
+    /* ãƒ‘ãƒ¯ãƒ¼ãƒ€ã‚¦ãƒ³è§£é™¤ */
     uint8_t data;
 
     data = unit->ctrl_1 | 0x80;
@@ -58,7 +58,7 @@ char lps25h_start( LPS25HUnit *unit )
 
 char lps25h_stop( LPS25HUnit *unit )
 {
-    /* ƒpƒ[ƒ_ƒEƒ“ */
+    /* ãƒ‘ãƒ¯ãƒ¼ãƒ€ã‚¦ãƒ³ */
     uint8_t data;
 
     data = unit->ctrl_1 & ~0x80;
@@ -72,7 +72,7 @@ char lps25h_stop( LPS25HUnit *unit )
 
 char lps25h_data_ready( LPS25HUnit *unit )
 {
-    /* ‹Cˆ³ƒf[ƒ^€”õŠm”F */
+    /* æ°—åœ§ãƒ‡ãƒ¼ã‚¿æº–å‚™ç¢ºèª */
     uint8_t data;
 
     if ( !i2c_read_register( unit->address, 0x27, &data, 1, I2CPolling ) ) {
@@ -88,7 +88,7 @@ char lps25h_data_ready( LPS25HUnit *unit )
 
 char lps25h_temp_data_ready( LPS25HUnit *unit )
 {
-    /* ‰·“xƒf[ƒ^€”õŠm”F */
+    /* æ¸©åº¦ãƒ‡ãƒ¼ã‚¿æº–å‚™ç¢ºèª */
     uint8_t data;
 
     if ( !i2c_read_register( unit->address, 0x27, &data, 1, I2CPolling ) ) {
@@ -104,16 +104,16 @@ char lps25h_temp_data_ready( LPS25HUnit *unit )
 
 char lps25h_read( LPS25HUnit *unit )
 {
-    /* ‹Cˆ³ƒf[ƒ^[‚ğ“Ç‚Ş */
+    /* æ°—åœ§ãƒ‡ãƒ¼ã‚¿ãƒ¼ã‚’èª­ã‚€ */
     uint8_t data[4];
     data[3] = 0;
 
-    /* ƒ}ƒ‹ƒ`ƒoƒCƒgƒŠ[ƒh‚ğs‚¤‚É‚ÍMSB‚ğ1‚É‚·‚é•K—v‚ª‚ ‚é */
+    /* ãƒãƒ«ãƒãƒã‚¤ãƒˆãƒªãƒ¼ãƒ‰ã‚’è¡Œã†ã«ã¯MSBã‚’1ã«ã™ã‚‹å¿…è¦ãŒã‚ã‚‹ */
     if ( !i2c_read_register( unit->address, 0x28 | 0x80, data, 3, I2CPolling ) ) {
         return 0;
     }
 
-    /* –{—ˆint32‚¾‚ªAstrict-aliasing rules‚É’ïG‚·‚é‚½‚ßŠÂ‹«’è‹`“®ì‚ÉˆË‘¶‚·‚é‚ª‚±‚¤‘‚­ */
+    /* æœ¬æ¥int32ã ãŒã€strict-aliasing rulesã«æŠµè§¦ã™ã‚‹ãŸã‚ç’°å¢ƒå®šç¾©å‹•ä½œã«ä¾å­˜ã™ã‚‹ãŒã“ã†æ›¸ã */
     unit->pressure = *(uint32_t *)( data );
 
     return 1;
@@ -121,10 +121,10 @@ char lps25h_read( LPS25HUnit *unit )
 
 char lps25h_read_temp( LPS25HUnit *unit )
 {
-    /* ‰·“xƒf[ƒ^[‚ğ“Ç‚Ş */
+    /* æ¸©åº¦ãƒ‡ãƒ¼ã‚¿ãƒ¼ã‚’èª­ã‚€ */
     uint8_t data[2];
 
-    /* ƒ}ƒ‹ƒ`ƒoƒCƒgƒŠ[ƒh‚ğs‚¤‚É‚ÍMSB‚ğ1‚É‚·‚é•K—v‚ª‚ ‚é */
+    /* ãƒãƒ«ãƒãƒã‚¤ãƒˆãƒªãƒ¼ãƒ‰ã‚’è¡Œã†ã«ã¯MSBã‚’1ã«ã™ã‚‹å¿…è¦ãŒã‚ã‚‹ */
     if ( !i2c_read_register( unit->address, 0x2B | 0x80, data, 2, I2CPolling ) ) {
         return 0;
     }

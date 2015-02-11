@@ -1,8 +1,8 @@
 /*
- * LPS25HƒRƒ“ƒgƒ[ƒ‹ƒ‰ƒCƒuƒ‰ƒŠ
+ * LPS25Hã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ãƒ©ã‚¤ãƒ–ãƒ©ãƒª
  *
- * ƒuƒƒbƒLƒ“ƒO“®ì
- * SLA : SDO=0‚Å5C
+ * ãƒ–ãƒ­ãƒƒã‚­ãƒ³ã‚°å‹•ä½œ
+ * SLA : SDO=0ã§5C
  *
  * T(degC) = 42.5 + (Temp_OUTH & TEMP_OUT_L)[dec]/480
  *
