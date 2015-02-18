@@ -16,8 +16,8 @@ SSOURCES =
 TARGET   = main
 
 # オプション
-CFLAGS  = -Os -fshort-enums -g -Wall -mmcu=$(DEVICE) -DF_CPU=$(F_CPU)
-LDFLAGS = -g -mmcu=$(DEVICE)
+CFLAGS  = -Os -fshort-enums -Wall -mmcu=$(DEVICE) -DF_CPU=$(F_CPU)
+LDFLAGS = -mmcu=$(DEVICE)
 LINK	=
 INCLUDE =
 
