@@ -16,7 +16,8 @@ typedef enum {
     ID_MPU9150_ACC,
     ID_MPU9150_TEMP,
     ID_AK8975,
-    ID_GPS,
+    ID_GPS
+    ID_LPS25H,
     DEVICE_COUNT,
 } SensorDeviceId;
 

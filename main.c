@@ -75,6 +75,7 @@ int main( void )
 
     uint8_t before_input;
     uint8_t pushed_input;
+    uint8_t now_input;
     uint8_t check_pushed;
 
     LPS25HUnit pres;
@@ -148,6 +149,7 @@ int main( void )
     /* ピン入力初期化 */
     input = ~PIND & SW_MASK;
     before_input = input;
+    check_pushed = 0;
 
     /* 割り込み開始 */
     sei();
@@ -161,104 +163,102 @@ int main( void )
     before_system_clock = 0;
     now_system_clock    = 0;
     system_clock        = 0;
-    check_pushed = 0;
 
     /* メインループ */
     while ( 1 ) {
         /* 押されたスイッチを調べる */
-        pushed_input = ~before_input & input;
-        before_input = input;
+        now_input = input;
+        pushed_input = ~before_input & now_input;
+        before_input = now_input;
 
         /* スイッチがどれか押されていれば入力チェック開始 */
         if ( pushed_input ) {
-            check_pushed = pushed_input;
             before_system_clock = now_system_clock;
+            check_pushed = pushed_input;
         }
 
-        /* 以前にボタン押されていたら */
-        if ( check_pushed ) {
-            /* 押され続けているか確認 */
-            if ( check_pushed & input ) {
+        // Buttons are pushed
+        if ( now_input && check_pushed ) {
+            // Handle inputs
+            if ( now_input != check_pushed ) {
+                // Inputs are changed before handling
+                check_pushed = 0;
+            } else if ( before_system_clock + 10000 < now_system_clock ) {
                 /* 1秒以上押され続けたのでスイッチチェック ( 同時押しは想定していない ) */
-                if ( before_system_clock + 10000 < now_system_clock ) {
-                    if ( SW_START_STOP & check_pushed ) {
-                        /* スタートストップボタン */
-                        if ( write_dev ) {
-                            /* 書き込み中なら書き込み停止 */
+                if ( SW_START_STOP & now_input ) {
+                    /* スタートストップボタン */
+                    if ( write_dev ) {
+                        /* 書き込み中なら書き込み停止 */
 
-                            /* 終了シグネチャ書き込み */
-                            data = LOG_END_SIGNATURE;
+                        /* 終了シグネチャ書き込み */
+                        data = LOG_END_SIGNATURE;
+                        micomfs_seq_fwrite( &fp, &data, 1 );
+
+                        /* Stop file writing */
+                        ret  = micomfs_stop_fwrite( &fp, 0 );
+                        ret += micomfs_fclose( &fp );
+
+                        /* 書き込み指示クリア */
+                        write_dev = 0;
+
+                        /* 確認 */
+                        if ( ret ) {
+                            /* 成功したので消える */
+                            PORTD &= ~LED_STATUS;
+                        } else {
+                            /* 失敗したので停止 */
+                            fatal_error();
+                        }
+                    } else {
+                        /* 書き込み中でなければ書き込み開始 */
+
+                        /* 開始するたびにFS初期化とファイル作成 */
+                        ret = micomfs_init_fs( &fs );
+
+                        /* ファイル名決定 */
+                        snprintf( file_name, sizeof( file_name ), "log%d.log", (int)fs.used_entry_count );
+
+                        /* ファイル作成 */
+                        ret *= micomfs_fcreate( &fs, &fp, file_name, MICOMFS_MAX_FILE_SECOTR_COUNT );
+
+                        /* ヘッダ作成 */
+                        if ( !ret ) {
+                            /* ファイルの確保失敗 */
+                            fatal_error();
+                        } else {
+                            /* 有効デバイスリスト作成 */
+                            write_dev = enabled_dev & ( DEV_MAG | DEV_GYRO | DEV_ACC | DEV_PRESS | DEV_TEMP );
+
+                            /* 書き込み開始 */
+                            micomfs_start_fwrite( &fp, 0 );
+
+                            /* シグネチャ書き込み */
+                            data = DEVICE_LOG_SIGNATURE;
                             micomfs_seq_fwrite( &fp, &data, 1 );
 
-                            /* Stop file writing */
-                            ret  = micomfs_stop_fwrite( &fp, 0 );
-                            ret += micomfs_fclose( &fp );
+                            /* 有効デバイスリスト書き込み */
+                            data = write_dev;
+                            micomfs_seq_fwrite( &fp, &data, 1 );
 
-                            /* 書き込み指示クリア */
-                            write_dev = 0;
-
-                            /* 確認 */
-                            if ( ret ) {
-                                /* 成功したので消える */
-                                PORTD &= ~LED_STATUS;
-                            } else {
-                                /* 失敗したので停止 */
-                                fatal_error();
-                            }
-                        } else {
-                            /* 書き込み中でなければ書き込み開始 */
-
-                            /* 開始するたびにFS初期化とファイル作成 */
-                            ret = micomfs_init_fs( &fs );
-
-                            /* ファイル名決定 */
-                            snprintf( file_name, sizeof( file_name ), "log%d.log", (int)fs.used_entry_count );
-
-                            /* ファイル作成 */
-                            ret *= micomfs_fcreate( &fs, &fp, file_name, MICOMFS_MAX_FILE_SECOTR_COUNT );
-
-                            /* ヘッダ作成 */
-                            if ( !ret ) {
-                                /* ファイルの確保失敗 */
-                                fatal_error();
-                            } else {
-                                /* 有効デバイスリスト作成 */
-                                write_dev = enabled_dev & ( DEV_MAG | DEV_GYRO | DEV_ACC | DEV_PRESS | DEV_TEMP );
-
-                                /* 書き込み開始 */
-                                micomfs_start_fwrite( &fp, 0 );
-
-                                /* シグネチャ書き込み */
-                                data = DEVICE_LOG_SIGNATURE;
-                                micomfs_seq_fwrite( &fp, &data, 1 );
-
-                                /* 有効デバイスリスト書き込み */
-                                data = write_dev;
-                                micomfs_seq_fwrite( &fp, &data, 1 );
-
-                                /* 光る */
-                                PORTD |= LED_STATUS;
-                            }
-                        }
-                    } else if ( SW_FORMAT & check_pushed ) {
-                        /* フォーマットボタン */
-                        if ( !write_dev ) {
-                            /* 書き込み中でなければフォーマット開始 */
-                            if ( micomfs_format( &fs, 512, sd_get_size() / sd_get_block_size(), 1024, 0 ) ) {
-                                /* 成功したので少し光る */
-                                onoff_led();
-                            } else {
-                                /* 失敗したので停止 */
-                                fatal_error();
-                            }
+                            /* 光る */
+                            PORTD |= LED_STATUS;
                         }
                     }
-
-                    /* スイッチ処理完了 */
-                    check_pushed = 0;
+                } else if ( SW_FORMAT & now_input ) {
+                    /* フォーマットボタン */
+                    if ( !write_dev ) {
+                        /* 書き込み中でなければフォーマット開始 */
+                        if ( micomfs_format( &fs, 512, sd_get_size() / sd_get_block_size(), 1024, 0 ) ) {
+                            /* 成功したので少し光る */
+                            onoff_led();
+                        } else {
+                            /* 失敗したので停止 */
+                            fatal_error();
+                        }
+                    }
                 }
-            } else {
-                /* 変化したので終了 */
+
+                // Inputs have been handled
                 check_pushed = 0;
             }
         }
