@@ -11,12 +11,12 @@ HFUSE  = 0xd9
 EFUSE  = 0x07
 
 # ソースコードと出力ファイル
-CSOURCES = main.c micomfs.c micomfs_dev.c mpu9150.c ak8975.c i2c.c sd.c spi.c lps25h.c
+CSOURCES = main.c micomfs.c micomfs_dev.c mpu9150.c ak8975.c i2c.c sd.c spi.c lps25h.c usart.c
 SSOURCES =
 TARGET   = main
 
 # オプション
-CFLAGS  = -Os -fshort-enums -Wall -mmcu=$(DEVICE) -DF_CPU=$(F_CPU)
+CFLAGS  = -O2 -fshort-enums -Wall -mmcu=$(DEVICE) -DF_CPU=$(F_CPU)
 LDFLAGS = -mmcu=$(DEVICE)
 LINK	=
 INCLUDE =
@@ -30,7 +30,7 @@ SIZE    = avr-size
 AVRDUDE = avrdude
 SIM     = ../../usr/bin/simulavr
 ifeq ($(OS),Windows_NT)
-    SUDO = 
+    SUDO =
 else
     SUDO = sudo
 endif
@@ -87,7 +87,7 @@ clean :
 
 rebuild :
 	$(MAKE) -B
-	
+
 run : $(TARGET)
 	$(MAKE) install
 	cu -l /dev/ttyUSB0 -s 4800

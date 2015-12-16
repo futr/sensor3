@@ -13,11 +13,14 @@
 #include "ak8975.h"
 #include "mpu9150.h"
 #include "micomfs.h"
+#include "usart.h"
 #include "device_id.h"
 
 #define LED_STATUS    _BV( PD7 )
 #define SW_START_STOP _BV( PD4 )
 #define SW_FORMAT     _BV( PD5 )
+#define SW_MASK       ( SW_START_STOP | SW_FORMAT )
+#define IR_INPUT      _BV( PD2 )
 
 static volatile uint32_t system_clock;  /* 100usごとにカウントされるタイマー */
 static uint16_t input_counter;
@@ -32,8 +35,8 @@ ISR( TIMER0_COMPA_vect )
 
     /* 50msごとに入力読み込み ( チャタリング防止 ) */
     if ( 500 <= input_counter ) {
-        /* LEDをマスクしてピンを読み込み */
-        input = ~PIND & 0x7F;
+        /* Read PD value with input pin masks */
+        input = ~PIND & SW_MASK;
 
         input_counter = 0;
     } else {
@@ -65,7 +68,6 @@ int main( void )
     /* sensor3 制御プログラム */
     Devices enabled_dev;
     Devices write_dev;
-    Devices write_dev_buf;
     Devices updated_dev;
 
     uint32_t before_system_clock;
@@ -105,6 +107,9 @@ int main( void )
     TIMSK0 = 0x02;          /* コンペアマッチA割り込み有効 */
     OCR0A  = 100;           /* 100usごとに割りこみ発生 */
 
+    // Initialize USART
+    usart_init( 9600, UsartRX | UsartTX, 0 );
+
     /* I2Cバス初期化 */
     i2c_init_master( 15, I2CPrescale1, 0, 0 );
 
@@ -115,7 +120,7 @@ int main( void )
         enabled_dev |= DEV_SD;
     }
 
-    if ( mpu9150_init( &mpu9150, 0x68, 0, MPU9150LPFCFG0, MPU9150AccFSR16g, MPU9150AccHPFReset, MPU9150GyroFSR1000DPS ) ) {
+    if ( mpu9150_init( &mpu9150, 0x68, 0, MPU9150LPFCFG0, MPU9150AccFSR16g, MPU9150AccHPFReset, MPU9150GyroFSR2000DPS ) ) {
         enabled_dev |= DEV_GYRO | DEV_ACC | DEV_TEMP;
     }
 
@@ -141,7 +146,7 @@ int main( void )
     }
 
     /* ピン入力初期化 */
-    input = ~PIND;
+    input = ~PIND & SW_MASK;
     before_input = input;
 
     /* 割り込み開始 */
@@ -153,7 +158,6 @@ int main( void )
 
     /* 各種変数初期化 */
     write_dev     = 0;
-    write_dev_buf = 0;
     before_system_clock = 0;
     now_system_clock    = 0;
     system_clock        = 0;
@@ -170,7 +174,7 @@ int main( void )
             check_pushed = pushed_input;
             before_system_clock = now_system_clock;
         }
-        
+
         /* 以前にボタン押されていたら */
         if ( check_pushed ) {
             /* 押され続けているか確認 */
@@ -192,7 +196,7 @@ int main( void )
 
                             /* 書き込み指示クリア */
                             write_dev = 0;
-                            
+
                             /* 確認 */
                             if ( ret ) {
                                 /* 成功したので消える */
@@ -203,7 +207,7 @@ int main( void )
                             }
                         } else {
                             /* 書き込み中でなければ書き込み開始 */
-                            
+
                             /* 開始するたびにFS初期化とファイル作成 */
                             ret = micomfs_init_fs( &fs );
 
@@ -220,7 +224,7 @@ int main( void )
                             } else {
                                 /* 有効デバイスリスト作成 */
                                 write_dev = enabled_dev & ( DEV_MAG | DEV_GYRO | DEV_ACC | DEV_PRESS | DEV_TEMP );
-                                
+
                                 /* 書き込み開始 */
                                 micomfs_start_fwrite( &fp, 0 );
 
@@ -231,7 +235,7 @@ int main( void )
                                 /* 有効デバイスリスト書き込み */
                                 data = write_dev;
                                 micomfs_seq_fwrite( &fp, &data, 1 );
-                                
+
                                 /* 光る */
                                 PORTD |= LED_STATUS;
                             }
@@ -249,7 +253,7 @@ int main( void )
                             }
                         }
                     }
-                    
+
                     /* スイッチ処理完了 */
                     check_pushed = 0;
                 }
@@ -258,19 +262,19 @@ int main( void )
                 check_pushed = 0;
             }
         }
-        
+
         /* 現在の時刻を取得 */
         cli();
         now_system_clock = system_clock;
         sei();
-        
+
         /* 書き込み中でなければ測定しない */
         if ( !write_dev ) {
             continue;
         }
-        
+
         /* ピコピコして動いていることを示す */
-        if ( now_system_clock & 0x200 ) {
+        if ( now_system_clock & 0x400 ) {
             PORTD &= ~LED_STATUS;
         } else {
             PORTD |= LED_STATUS;
