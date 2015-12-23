@@ -13,18 +13,7 @@ sd.c
 sd.h
 debug.c
 debug.h
-adxl345.h
-adxl345.c
-l3gd20.c
-l3gd20.h
-lps331ap.c
-lps331ap.h
-hmc5883l.h
-hmc5883l.c
 device_id.h
-st7032i.h
-st7032i.c
-
 micomfs.c
 micomfs.h
 ak8975.c
@@ -33,3 +22,5 @@ mpu9150.c
 mpu9150.h
 micomfs_dev.h
 micomfs_dev.c
+lps25h.h
+lps25h.c

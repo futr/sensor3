@@ -105,16 +105,14 @@ char lps25h_temp_data_ready( LPS25HUnit *unit )
 char lps25h_read( LPS25HUnit *unit )
 {
     /* 気圧データーを読む */
-    uint8_t data[4];
-    data[3] = 0;
+    int32_t data = 0;
 
     /* マルチバイトリードを行うにはMSBを1にする必要がある */
-    if ( !i2c_read_register( unit->address, 0x28 | 0x80, data, 3, I2CPolling ) ) {
+    if ( !i2c_read_register( unit->address, 0x28 | 0x80, (uint8_t *)&data, 3, I2CPolling ) ) {
         return 0;
     }
 
-    /* 本来int32だが、strict-aliasing rulesに抵触するため環境定義動作に依存するがこう書く */
-    unit->pressure = *(uint32_t *)( data );
+    unit->pressure = data;
 
     return 1;
 }
@@ -122,14 +120,14 @@ char lps25h_read( LPS25HUnit *unit )
 char lps25h_read_temp( LPS25HUnit *unit )
 {
     /* 温度データーを読む */
-    uint8_t data[2];
+    int16_t data;
 
     /* マルチバイトリードを行うにはMSBを1にする必要がある */
-    if ( !i2c_read_register( unit->address, 0x2B | 0x80, data, 2, I2CPolling ) ) {
+    if ( !i2c_read_register( unit->address, 0x2B | 0x80, (uint8_t *)&data, 2, I2CPolling ) ) {
         return 0;
     }
 
-    unit->temp = *(uint16_t *)( data );
+    unit->temp = data;
 
     return 1;
 }

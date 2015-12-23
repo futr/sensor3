@@ -92,7 +92,7 @@ char ak8975_read( AK8975Unit *unit )
     /* 測定結果読む */
     int16_t data[3];
 
-    if ( !i2c_read_register( unit->address, 0x03, data, 6, I2CPolling ) ) {
+    if ( !i2c_read_register( unit->address, 0x03, (uint8_t *)data, 6, I2CPolling ) ) {
         return 0;
     }
 
