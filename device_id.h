@@ -5,6 +5,10 @@
 #define LOG_SIGNATURE_OLD 0x3E      /* ログファイルのデーターごとの先頭バイトシグネチャ (古い) */
 #define LOG_SIGNATURE 0xAE          /* ログファイルのデーターごとの先頭バイトシグネチャ */
 #define LOG_END_SIGNATURE 0xCE      /* ログデーター終了フラッグ */
+#define TRANSMIT_START 0xA5
+#define TRANSMIT_STOP  0xB5
+#define TRANSMIT_HANDSHAKE 0xC5
+#define TRANSMIT_HANDSHAKE_ACK 0xC6
 
 typedef enum {
     ID_ADXL345,
@@ -16,7 +20,7 @@ typedef enum {
     ID_MPU9150_ACC,
     ID_MPU9150_TEMP,
     ID_AK8975,
-    ID_GPS
+    ID_GPS,
     ID_LPS25H,
     DEVICE_COUNT,
 } SensorDeviceId;
