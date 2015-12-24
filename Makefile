@@ -8,7 +8,7 @@ F_CPU  = 8000000UL
 # FUSES
 LFUSE  = 0xf7
 HFUSE  = 0xd9
-EFUSE  = 0x07
+EFUSE  = 0x06
 
 # ソースコードと出力ファイル
 CSOURCES = main.c micomfs.c micomfs_dev.c mpu9150.c ak8975.c i2c.c sd.c spi.c lps25h.c usart.c

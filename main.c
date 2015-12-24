@@ -31,13 +31,15 @@ static volatile uint32_t system_clock;  /* 100usごとにカウントされる�
 static uint16_t input_counter;
 static volatile uint8_t input;
 
+static Devices all_sensors;
 static volatile Devices enabled_dev;
 static volatile Devices write_dev;
 static Devices updated_dev;
 static volatile WritingTarget target;
 
-void fatal_error( void );
-void onoff_led( void );
+static void fatal_error( void );
+static void onoff_led( void );
+static void sensor_init_error( void );
 
 ISR( USART_RX_vect )
 {
@@ -97,6 +99,19 @@ void fatal_error( void )
 {
     /* 致命的な問題が起きたのでLED点滅 */
     while ( 1 ) {
+        PORTD |= LED_STATUS;
+        _delay_ms( 150 );
+        PORTD &= ~LED_STATUS;
+        _delay_ms( 150 );
+    }
+}
+
+void sensor_init_error( void )
+{
+    // Not fatal, but there are failed sensor
+    int i;
+
+    for ( i = 0; i < 5; i++ ) {
         PORTD |= LED_STATUS;
         _delay_ms( 150 );
         PORTD &= ~LED_STATUS;
@@ -165,6 +180,7 @@ int main( void )
     i2c_init_master( 15, I2CPrescale1, 0, 0 );
 
     /* デバイス初期化 */
+    all_sensors = DEV_MAG | DEV_GYRO | DEV_ACC | DEV_PRESS | DEV_TEMP;
     enabled_dev = 0;
 
     if ( sd_init( SPIOscDiv2, 512, 0 ) ) {
@@ -188,12 +204,17 @@ int main( void )
     _delay_ms( 1000 );
 
     /* 初期化確認 ( SDは必ず必要でセンサーはどれか一つは必要 ) */
-    if ( ( enabled_dev & DEV_SD ) && ( enabled_dev & ( DEV_MAG | DEV_GYRO | DEV_ACC | DEV_PRESS ) ) ) {
+    if ( ( enabled_dev & DEV_SD ) && ( enabled_dev & all_sensors ) ) {
         /* 初期化成功なので少し光る */
         onoff_led();
     } else {
         /* 初期化失敗なので点滅し続ける */
         fatal_error();
+    }
+
+    // If there are any failed sensor, on-off-on-off LED
+    if ( ( enabled_dev & ( DEV_SD | all_sensors ) ) != ( DEV_SD | all_sensors ) ) {
+        sensor_init_error();
     }
 
     /* ピン入力初期化 */
@@ -281,7 +302,7 @@ int main( void )
                             fatal_error();
                         } else {
                             /* 有効デバイスリスト作成 */
-                            write_dev = enabled_dev & ( DEV_MAG | DEV_GYRO | DEV_ACC | DEV_PRESS | DEV_TEMP );
+                            write_dev = enabled_dev & all_sensors;
 
                             // Write to SD
                             target = WriteToSD;
